@@ -27,7 +27,12 @@ export default function Sidebar() {
                         <NavLink
                             key={idx}
                             to={item.to}
-
+                            className={({ isActive }) =>
+                                `flex items-center gap-3 px-4 py-2 rounded-lg ${isActive
+                                    ? "bg-pink-500 text-white font-semibold"
+                                    : "text-gray-600 hover:bg-gray-100"
+                                }`
+                            }
                         >
                             {item.icon} {item.label}
                         </NavLink>
