@@ -1,17 +1,33 @@
 import { useState, useEffect } from "react";
-import { FaBell, FaQuestionCircle, FaSearch, FaThLarge, FaFolder, FaUsers, FaChartPie, FaEnvelope, FaCode, FaShoppingCart, FaDollarSign, FaUserPlus, FaArrowUp, FaArrowDown } from "react-icons/fa";
+import {
+    FaBell, FaQuestionCircle, FaSearch, FaThLarge, FaFolder, FaUsers,
+    FaChartPie, FaEnvelope, FaCode, FaShoppingCart, FaDollarSign,
+    FaUserPlus, FaArrowUp, FaArrowDown, FaPen
+} from "react-icons/fa";
 
 const customers = [
-    { name: "Elizabeth Lee", company: "AvatarSystems", value: 359, date: "10/07/2023", status: "New" },
-    { name: "Carlos Garcia", company: "SmoozeShift", value: 747, date: "24/07/2023", status: "New" },
-    { name: "Elizabeth Bailey", company: "Prime Time Telecom", value: 564, date: "08/08/2023", status: "In-progress" },
-    { name: "Ryan Brown", company: "OmniTech Corporation", value: 541, date: "31/08/2023", status: "In-progress" },
-    { name: "Ryan Young", company: "DataStream Inc.", value: 769, date: "01/05/2023", status: "Completed" },
-    { name: "Hailey Adams", company: "FlowRush", value: 922, date: "10/06/2023", status: "Completed" },
+    { name: "Elizabeth Lee", company: "AvatarSystems", value: 359, date: "10/07/2023", status: "New", avatar: "https://randomuser.me/api/portraits/women/1.jpg" },
+    { name: "Carlos Garcia", company: "SmoozeShift", value: 747, date: "24/07/2023", status: "New", avatar: "https://randomuser.me/api/portraits/men/2.jpg" },
+    { name: "Elizabeth Bailey", company: "Prime Time Telecom", value: 564, date: "08/08/2023", status: "In-progress", avatar: "https://randomuser.me/api/portraits/women/3.jpg" },
+    { name: "Ryan Brown", company: "OmniTech Corporation", value: 541, date: "31/08/2023", status: "In-progress", avatar: "https://randomuser.me/api/portraits/men/4.jpg" },
+    { name: "Ryan Young", company: "DataStream Inc.", value: 769, date: "01/05/2023", status: "Completed", avatar: "https://randomuser.me/api/portraits/men/5.jpg" },
+    { name: "Hailey Adams", company: "FlowRush", value: 922, date: "10/06/2023", status: "Completed", avatar: "https://randomuser.me/api/portraits/women/6.jpg" },
 ];
 
+const colorClasses = {
+    pink: "bg-pink-100",
+    blue: "bg-blue-100",
+    green: "bg-green-100",
+};
+
+const iconMap = {
+    FaShoppingCart: <FaShoppingCart />,
+    FaDollarSign: <FaDollarSign />,
+    FaUserPlus: <FaUserPlus />,
+};
+
 const OverviewCard = ({ title, value, change, color, icon, isPositive }) => (
-    <div className={`relative bg-${color}-100 p-6 rounded-xl shadow flex flex-col justify-between`}>
+    <div className={`relative ${colorClasses[color] || "bg-gray-100"} p-6 rounded-xl shadow flex flex-col justify-between`}>
         <div>
             <h3 className="text-sm font-bold text-gray-700 mb-2">{title}</h3>
             <p className="text-3xl font-bold text-gray-900">{value}</p>
@@ -20,24 +36,46 @@ const OverviewCard = ({ title, value, change, color, icon, isPositive }) => (
             {isPositive ? <FaArrowUp className="text-green-500" /> : <FaArrowDown className="text-red-500" />}
             <p className={`text-sm ${isPositive ? "text-green-500" : "text-red-500"}`}>{change} period of change</p>
         </div>
-        <div className="absolute top-4 right-4 p-2 border rounded-full">
-            {icon}
-        </div>
+        <div className="absolute top-4 right-4 p-2 border rounded-full">{icon}</div>
     </div>
 );
 
 export default function Dashboard() {
     const [search, setSearch] = useState("");
     const [overviewData, setOverviewData] = useState([]);
+    const [selected, setSelected] = useState([]);
 
     useEffect(() => {
-        const data = [
-            { id: "1", title: "Turnover", value: "$92,405", change: "5.39%", color: "pink", icon: <FaShoppingCart />, isPositive: true },
-            { id: "2", title: "Profit", value: "$32,218", change: "5.39%", color: "blue", icon: <FaDollarSign />, isPositive: true },
-            { id: "3", title: "New customer", value: "298", change: "6.84%", color: "blue", icon: <FaUserPlus />, isPositive: true },
-        ];
-        setOverviewData(data);
+        const fetchData = async () => {
+            try {
+                const response = await fetch("https://67ecb701aa794fb3222e8e9b.mockapi.io/card");
+                const data = await response.json();
+                const mappedData = data.map(item => ({
+                    ...item,
+                    icon: iconMap[item.icon] || <FaShoppingCart />
+                }));
+                setOverviewData(mappedData);
+            } catch (error) {
+                console.error("Error fetching overview data:", error);
+            }
+        };
+        fetchData();
     }, []);
+
+    console.log(overviewData);
+
+
+    const toggleSelectAll = () => {
+        if (selected.length === customers.length) {
+            setSelected([]);
+        } else {
+            setSelected(customers.map((_, idx) => idx));
+        }
+    };
+
+    const toggleSelect = (idx) => {
+        setSelected(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]);
+    };
 
     return (
         <div className="grid grid-cols-[16rem_1fr] min-h-screen bg-gray-50">
@@ -95,7 +133,7 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Content Area */}
+                {/* Overview + Detailed Report */}
                 <div className="grid gap-8">
                     {/* Overview */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -107,28 +145,38 @@ export default function Dashboard() {
                     {/* Detailed Report */}
                     <div className="bg-white p-6 rounded-xl shadow">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold">Detailed report</h3>
+                            <h3 className="text-xl font-bold flex items-center gap-2 text-pink-500">
+                                <FaFolder /> Detailed report
+                            </h3>
                             <div className="flex gap-2">
-                                <button className="border px-4 py-2 rounded">Import</button>
-                                <button className="border px-4 py-2 rounded">Export</button>
+                                <button className="border border-pink-500 text-pink-500 px-4 py-2 rounded flex items-center gap-2">
+                                    <FaFolder /> Import
+                                </button>
+                                <button className="border border-pink-500 text-pink-500 px-4 py-2 rounded flex items-center gap-2">
+                                    <FaFolder /> Export
+                                </button>
                             </div>
                         </div>
+
                         <div className="overflow-x-auto">
                             <table className="min-w-full">
                                 <thead>
                                     <tr className="text-left border-b">
+                                        <th><input type="checkbox" checked={selected.length === customers.length} onChange={toggleSelectAll} /></th>
                                         <th className="py-2">Customer Name</th>
                                         <th>Company</th>
                                         <th>Order Value</th>
                                         <th>Order Date</th>
                                         <th>Status</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {customers.map((customer, idx) => (
                                         <tr key={idx} className="border-b hover:bg-gray-100">
+                                            <td><input type="checkbox" checked={selected.includes(idx)} onChange={() => toggleSelect(idx)} /></td>
                                             <td className="py-2 flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-gray-300"></div>
+                                                <img src={customer.avatar} alt={customer.name} className="w-8 h-8 rounded-full object-cover" />
                                                 {customer.name}
                                             </td>
                                             <td>{customer.company}</td>
@@ -136,26 +184,30 @@ export default function Dashboard() {
                                             <td>{customer.date}</td>
                                             <td>
                                                 <span className={`px-2 py-1 rounded-full text-xs ${customer.status === "New" ? "bg-blue-100 text-blue-600" :
-                                                        customer.status === "In-progress" ? "bg-yellow-100 text-yellow-600" :
-                                                            "bg-green-100 text-green-600"
+                                                    customer.status === "In-progress" ? "bg-yellow-100 text-yellow-600" :
+                                                        "bg-green-100 text-green-600"
                                                     }`}>
                                                     {customer.status}
                                                 </span>
                                             </td>
+                                            <td><FaPen className="text-gray-400 cursor-pointer" /></td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
 
-                        {/* Pagination */}
-                        <div className="flex justify-center mt-6">
-                            <button className="px-3 py-1 bg-pink-500 text-white rounded-full">1</button>
-                            <button className="px-3 py-1 text-gray-500">2</button>
-                            <button className="px-3 py-1 text-gray-500">3</button>
-                            <span className="px-3 py-1">...</span>
-                            <button className="px-3 py-1 text-gray-500">10</button>
+                        <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
+                            <p>63 results</p>
+                            <div className="flex items-center gap-2">
+                                <button className="px-3 py-1 bg-pink-500 text-white rounded-full">1</button>
+                                <button className="px-3 py-1 text-gray-500">2</button>
+                                <button className="px-3 py-1 text-gray-500">3</button>
+                                <span className="px-3">...</span>
+                                <button className="px-3 py-1 text-gray-500">10</button>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </main>
