@@ -140,7 +140,34 @@ export default function Dashboard() {
     };
 
     const handleSubmit = async (e) => {
-        //add
+        e.preventDefault();
+        try {
+            const response = await fetch("https://67ecb701aa794fb3222e8e9b.mockapi.io/table", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(newUser)
+            });
+
+            const createdUser = await response.json();
+
+            setTableData(prev => [createdUser, ...prev]);
+            setIsModalOpen(false);
+            setNewUser({
+                cusName: "",
+                avatar: "",
+                company: "",
+                orderValue: "",
+                orderDate: "",
+                status: "New",
+            });
+
+            toast.success("Thêm mới người dùng thành công!");
+        } catch (error) {
+            console.error("Error creating user:", error);
+            toast.error("Thêm mới người dùng thất bại!");
+        }
     };
 
     const handleEdit = (user) => {
