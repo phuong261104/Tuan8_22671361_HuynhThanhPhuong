@@ -3,8 +3,9 @@ import DataTable from "react-data-table-component";
 import {
     FaBell, FaQuestionCircle, FaSearch,
     FaShoppingCart, FaDollarSign, FaUserPlus,
-    FaArrowUp, FaArrowDown, FaPen, FaThLarge, FaFolder
+    FaArrowUp, FaArrowDown, FaPen, FaThLarge, FaFolder, FaPlus
 } from "react-icons/fa";
+import Modal from "../components/Modal"; // Import Modal
 
 const colorClasses = {
     pink: "bg-pink-100",
@@ -38,6 +39,15 @@ export default function Dashboard() {
     const [search, setSearch] = useState("");
     const [overviewData, setOverviewData] = useState([]);
     const [tableData, setTableData] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newUser, setNewUser] = useState({
+        cusName: "",
+        avatar: "",
+        company: "",
+        orderValue: "",
+        orderDate: "",
+        status: "New",
+    });
 
     useEffect(() => {
         const fetchOverview = async () => {
@@ -115,6 +125,32 @@ export default function Dashboard() {
         },
     ];
 
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setNewUser(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const newEntry = {
+            id: Date.now().toString(),
+            ...newUser,
+        };
+        setTableData(prev => [newEntry, ...prev]);
+        setIsModalOpen(false);
+        setNewUser({
+            cusName: "",
+            avatar: "",
+            company: "",
+            orderValue: "",
+            orderDate: "",
+            status: "New",
+        });
+    };
+
     return (
         <div className="p-8 bg-gray-50 min-h-screen">
             {/* Header */}
@@ -165,6 +201,12 @@ export default function Dashboard() {
                     <h3 className="text-lg font-bold">Detailed Report</h3>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-1 bg-pink-500 text-white rounded-lg px-3 py-1 text-sm"
+                    >
+                        <FaPlus /> Thêm mới
+                    </button>
                     <button className="flex items-center gap-1 border border-pink-500 text-pink-500 rounded-lg px-3 py-1 text-sm">
                         <FaFolder className="text-pink-500" /> Import
                     </button>
@@ -192,6 +234,70 @@ export default function Dashboard() {
                     }}
                 />
             </div>
+
+            {/* Modal thêm mới */}
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Thêm mới người dùng">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <input
+                        type="text"
+                        name="cusName"
+                        placeholder="Tên khách hàng"
+                        value={newUser.cusName}
+                        onChange={handleChange}
+                        className="border rounded-lg p-2"
+                        required
+                    />
+                    <input
+                        type="url"
+                        name="avatar"
+                        placeholder="Link ảnh đại diện"
+                        value={newUser.avatar}
+                        onChange={handleChange}
+                        className="border rounded-lg p-2"
+                        required
+                    />
+                    <input
+                        type="text"
+                        name="company"
+                        placeholder="Tên công ty"
+                        value={newUser.company}
+                        onChange={handleChange}
+                        className="border rounded-lg p-2"
+                        required
+                    />
+                    <input
+                        type="text"
+                        name="orderValue"
+                        placeholder="Giá trị đơn hàng (ví dụ: $1000)"
+                        value={newUser.orderValue}
+                        onChange={handleChange}
+                        className="border rounded-lg p-2"
+                        required
+                    />
+                    <input
+                        type="date"
+                        name="orderDate"
+                        value={newUser.orderDate}
+                        onChange={handleChange}
+                        className="border rounded-lg p-2"
+                        required
+                    />
+                    <select
+                        name="status"
+                        value={newUser.status}
+                        onChange={handleChange}
+                        className="border rounded-lg p-2"
+                        required
+                    >
+                        <option value="New">New</option>
+                        <option value="In-progress">In-progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                    <button type="submit" className="bg-pink-500 text-white px-4 py-2 rounded-lg">
+                        Lưu
+                    </button>
+                </form>
+            </Modal>
         </div>
     );
 }
