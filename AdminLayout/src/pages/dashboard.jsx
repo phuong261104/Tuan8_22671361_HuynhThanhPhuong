@@ -6,6 +6,8 @@ import {
     FaArrowUp, FaArrowDown, FaPen, FaThLarge, FaFolder, FaPlus
 } from "react-icons/fa";
 import Modal from "../components/Modal"; // Import Modal
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const colorClasses = {
     pink: "bg-pink-100",
@@ -40,6 +42,7 @@ export default function Dashboard() {
     const [overviewData, setOverviewData] = useState([]);
     const [tableData, setTableData] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [newUser, setNewUser] = useState({
         cusName: "",
         avatar: "",
@@ -48,6 +51,7 @@ export default function Dashboard() {
         orderDate: "",
         status: "New",
     });
+    const [selectedUser, setSelectedUser] = useState(null);
 
     useEffect(() => {
         const fetchOverview = async () => {
@@ -108,8 +112,8 @@ export default function Dashboard() {
             name: "Status",
             selector: row => (
                 <span className={`px-2 py-1 rounded-full text-xs ${row.status === "New" ? "bg-blue-100 text-blue-600" :
-                        row.status === "In-progress" ? "bg-yellow-100 text-yellow-600" :
-                            "bg-green-100 text-green-600"
+                    row.status === "In-progress" ? "bg-yellow-100 text-yellow-600" :
+                        "bg-green-100 text-green-600"
                     }`}>
                     {row.status}
                 </span>
@@ -118,7 +122,12 @@ export default function Dashboard() {
         },
         {
             name: "Actions",
-            cell: () => <FaPen className="text-gray-400 cursor-pointer" />,
+            cell: (row) => (
+                <FaPen
+                    className="text-gray-400 cursor-pointer"
+                    onClick={() => handleEdit(row)}
+                />
+            ),
             ignoreRowClick: true,
             allowOverflow: true,
             button: true,
@@ -127,28 +136,46 @@ export default function Dashboard() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setNewUser(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setNewUser(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
+        //add
+    };
+
+    const handleEdit = (user) => {
+        setSelectedUser(user);
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateChange = (e) => {
+        const { name, value } = e.target;
+        setSelectedUser(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleUpdateSubmit = async (e) => {
         e.preventDefault();
-        const newEntry = {
-            id: Date.now().toString(),
-            ...newUser,
-        };
-        setTableData(prev => [newEntry, ...prev]);
-        setIsModalOpen(false);
-        setNewUser({
-            cusName: "",
-            avatar: "",
-            company: "",
-            orderValue: "",
-            orderDate: "",
-            status: "New",
-        });
+        try {
+            const response = await fetch(`https://67ecb701aa794fb3222e8e9b.mockapi.io/table/${selectedUser.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(selectedUser)
+            });
+
+            const updatedUser = await response.json();
+
+            setTableData(prev =>
+                prev.map(item => item.id === updatedUser.id ? updatedUser : item)
+            );
+            setIsEditModalOpen(false);
+
+            toast.success("Cập nhật người dùng thành công!");
+        } catch (error) {
+            console.error("Error updating user:", error);
+            toast.error("Cập nhật người dùng thất bại!");
+        }
     };
 
     return (
@@ -177,7 +204,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Overview Section */}
+            {/* Overview */}
             <div className="flex items-center gap-2 mb-4">
                 <div className="bg-pink-500 p-2 rounded-md">
                     <FaThLarge className="text-white" />
@@ -185,14 +212,13 @@ export default function Dashboard() {
                 <h3 className="text-lg font-bold">Overview</h3>
             </div>
 
-            {/* Overview Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {overviewData.map(item => (
                     <OverviewCard key={item.id} {...item} />
                 ))}
             </div>
 
-            {/* Detailed Report Section */}
+            {/* Detailed Report */}
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                     <div className="bg-pink-500 p-2 rounded-md">
@@ -207,16 +233,9 @@ export default function Dashboard() {
                     >
                         <FaPlus /> Thêm mới
                     </button>
-                    <button className="flex items-center gap-1 border border-pink-500 text-pink-500 rounded-lg px-3 py-1 text-sm">
-                        <FaFolder className="text-pink-500" /> Import
-                    </button>
-                    <button className="flex items-center gap-1 border border-pink-500 text-pink-500 rounded-lg px-3 py-1 text-sm">
-                        <FaFolder className="text-pink-500" /> Export
-                    </button>
                 </div>
             </div>
 
-            {/* DataTable */}
             <div className="bg-white p-6 rounded-xl shadow">
                 <DataTable
                     columns={columns}
@@ -235,69 +254,43 @@ export default function Dashboard() {
                 />
             </div>
 
-            {/* Modal thêm mới */}
+            {/* Modal Thêm */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Thêm mới người dùng">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <input
-                        type="text"
-                        name="cusName"
-                        placeholder="Tên khách hàng"
-                        value={newUser.cusName}
-                        onChange={handleChange}
-                        className="border rounded-lg p-2"
-                        required
-                    />
-                    <input
-                        type="url"
-                        name="avatar"
-                        placeholder="Link ảnh đại diện"
-                        value={newUser.avatar}
-                        onChange={handleChange}
-                        className="border rounded-lg p-2"
-                        required
-                    />
-                    <input
-                        type="text"
-                        name="company"
-                        placeholder="Tên công ty"
-                        value={newUser.company}
-                        onChange={handleChange}
-                        className="border rounded-lg p-2"
-                        required
-                    />
-                    <input
-                        type="text"
-                        name="orderValue"
-                        placeholder="Giá trị đơn hàng (ví dụ: $1000)"
-                        value={newUser.orderValue}
-                        onChange={handleChange}
-                        className="border rounded-lg p-2"
-                        required
-                    />
-                    <input
-                        type="date"
-                        name="orderDate"
-                        value={newUser.orderDate}
-                        onChange={handleChange}
-                        className="border rounded-lg p-2"
-                        required
-                    />
-                    <select
-                        name="status"
-                        value={newUser.status}
-                        onChange={handleChange}
-                        className="border rounded-lg p-2"
-                        required
-                    >
+                    <input type="text" name="cusName" placeholder="Tên khách hàng" value={newUser.cusName} onChange={handleChange} className="border rounded-lg p-2" required />
+                    <input type="url" name="avatar" placeholder="Link ảnh đại diện" value={newUser.avatar} onChange={handleChange} className="border rounded-lg p-2" required />
+                    <input type="text" name="company" placeholder="Tên công ty" value={newUser.company} onChange={handleChange} className="border rounded-lg p-2" required />
+                    <input type="text" name="orderValue" placeholder="Giá trị đơn hàng" value={newUser.orderValue} onChange={handleChange} className="border rounded-lg p-2" required />
+                    <input type="date" name="orderDate" value={newUser.orderDate} onChange={handleChange} className="border rounded-lg p-2" required />
+                    <select name="status" value={newUser.status} onChange={handleChange} className="border rounded-lg p-2" required>
                         <option value="New">New</option>
                         <option value="In-progress">In-progress</option>
                         <option value="Completed">Completed</option>
                     </select>
-                    <button type="submit" className="bg-pink-500 text-white px-4 py-2 rounded-lg">
-                        Lưu
-                    </button>
+                    <button type="submit" className="bg-pink-500 text-white px-4 py-2 rounded-lg">Lưu</button>
                 </form>
             </Modal>
+
+            {/* Modal Update */}
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Cập nhật người dùng">
+                {selectedUser && (
+                    <form onSubmit={handleUpdateSubmit} className="flex flex-col gap-4">
+                        <input type="text" name="cusName" placeholder="Tên khách hàng" value={selectedUser.cusName} onChange={handleUpdateChange} className="border rounded-lg p-2" required />
+                        <input type="url" name="avatar" placeholder="Link ảnh đại diện" value={selectedUser.avatar} onChange={handleUpdateChange} className="border rounded-lg p-2" required />
+                        <input type="text" name="company" placeholder="Tên công ty" value={selectedUser.company} onChange={handleUpdateChange} className="border rounded-lg p-2" required />
+                        <input type="text" name="orderValue" placeholder="Giá trị đơn hàng" value={selectedUser.orderValue} onChange={handleUpdateChange} className="border rounded-lg p-2" required />
+                        <input type="date" name="orderDate" value={selectedUser.orderDate} onChange={handleUpdateChange} className="border rounded-lg p-2" required />
+                        <select name="status" value={selectedUser.status} onChange={handleUpdateChange} className="border rounded-lg p-2" required>
+                            <option value="New">New</option>
+                            <option value="In-progress">In-progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        <button type="submit" className="bg-pink-500 text-white px-4 py-2 rounded-lg">Cập nhật</button>
+                    </form>
+                )}
+            </Modal>
+
+            <ToastContainer position="top-right" autoClose={3000} />
         </div>
     );
 }
